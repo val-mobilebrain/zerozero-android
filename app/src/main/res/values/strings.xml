@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ZeroZero</string>
+    <string name="zerozero_url">https://www.zerozero.pt/</string>
+    <!-- Replace with your OneSignal App ID from Settings → Keys &amp; IDs -->
+    <string name="onesignal_app_id" translatable="false">YOUR_ONESIGNAL_APP_ID</string>
+</resources>
