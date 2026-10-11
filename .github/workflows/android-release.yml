@@ -28,22 +28,44 @@ jobs:
       - name: Prepare release keystore
         env:
           RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
         run: |
-          if [ -n "$RELEASE_KEYSTORE_BASE64" ]; then
-            echo "$RELEASE_KEYSTORE_BASE64" | base64 -d > release.keystore
+          set -euo pipefail
+          if [ -z "${RELEASE_KEYSTORE_BASE64:-}" ]; then
+            echo "RELEASE_KEYSTORE_BASE64 secret is missing"
+            exit 1
           fi
+          echo "$RELEASE_KEYSTORE_BASE64" | tr -d '\n\r ' | base64 -d > "${{ github.workspace }}/release.keystore"
+          keytool -list -keystore "${{ github.workspace }}/release.keystore" \
+            -storepass "$RELEASE_STORE_PASSWORD" -alias "$RELEASE_KEY_ALIAS" >/dev/null
 
       - name: Build release APK
         env:
-          RELEASE_STORE_FILE: release.keystore
+          RELEASE_STORE_FILE: ${{ github.workspace }}/release.keystore
           RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-        run: ./gradlew assembleRelease --stacktrace
+        run: ./gradlew clean assembleRelease --no-configuration-cache --stacktrace
+
+      - name: Verify signed APK
+        run: |
+          set -euo pipefail
+          APK="${{ github.workspace }}/app/build/outputs/apk/release/app-release.apk"
+          if [ ! -f "$APK" ]; then
+            echo "Expected signed app-release.apk was not produced (check RELEASE_* secrets)."
+            ls -la "${{ github.workspace }}/app/build/outputs/apk/release/" || true
+            exit 1
+          fi
+          if [ -f "${{ github.workspace }}/app/build/outputs/apk/release/app-release-unsigned.apk" ]; then
+            echo "Unsigned APK present — release signing did not apply."
+            exit 1
+          fi
+          apksigner verify --verbose "$APK"
 
       - name: Upload release APK
         uses: actions/upload-artifact@v4
         with:
           name: zerozero-release-apk
-          path: app/build/outputs/apk/release/*.apk
+          path: app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error

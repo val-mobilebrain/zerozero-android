@@ -28,6 +28,17 @@ val hasReleaseSigning =
         !releaseKeyPassword.isNullOrBlank() &&
         rootProject.file(releaseStoreFilePath).exists()
 
+gradle.taskGraph.whenReady {
+    if (hasReleaseSigning.not() &&
+        allTasks.any { it.path == ":app:assembleRelease" || it.path == ":app:packageRelease" }
+    ) {
+        error(
+            "Release signing is not configured. Set RELEASE_STORE_FILE, RELEASE_STORE_PASSWORD, " +
+                "RELEASE_KEY_ALIAS, and RELEASE_KEY_PASSWORD (env or local.properties).",
+        )
+    }
+}
+
 android {
     namespace = "com.zerozerosportnewsappmobzerozero"
     compileSdk = 36
@@ -47,6 +58,9 @@ android {
                 storePassword = releaseStorePassword
                 keyAlias = releaseKeyAlias
                 keyPassword = releaseKeyPassword
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
             }
         }
     }
