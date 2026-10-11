@@ -1,4 +1,3 @@
-import java.io.FileInputStream
 import java.util.Properties
 
 plugins {
@@ -6,15 +5,28 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
-val localProperties = Properties().apply {
-    val file = rootProject.file("local.properties")
-    if (file.exists()) {
-        load(FileInputStream(file))
+fun readSigningValue(key: String): String? {
+    System.getenv(key)?.takeIf { it.isNotBlank() }?.let { return it }
+    val localProperties = rootProject.file("local.properties")
+    if (localProperties.exists()) {
+        val props = Properties()
+        localProperties.inputStream().use { props.load(it) }
+        props.getProperty(key)?.takeIf { it.isNotBlank() }?.let { return it }
     }
+    return null
 }
 
-fun releaseProp(name: String): String? =
-    System.getenv(name) ?: localProperties.getProperty(name)
+val releaseStoreFilePath = readSigningValue("RELEASE_STORE_FILE")
+val releaseStorePassword = readSigningValue("RELEASE_STORE_PASSWORD")
+val releaseKeyAlias = readSigningValue("RELEASE_KEY_ALIAS")
+val releaseKeyPassword = readSigningValue("RELEASE_KEY_PASSWORD")
+
+val hasReleaseSigning =
+    !releaseStoreFilePath.isNullOrBlank() &&
+        !releaseStorePassword.isNullOrBlank() &&
+        !releaseKeyAlias.isNullOrBlank() &&
+        !releaseKeyPassword.isNullOrBlank() &&
+        rootProject.file(releaseStoreFilePath).exists()
 
 android {
     namespace = "com.zerozerosportnewsappmobzerozero"
@@ -29,13 +41,12 @@ android {
     }
 
     signingConfigs {
-        create("release") {
-            val storeFilePath = releaseProp("RELEASE_STORE_FILE")
-            if (!storeFilePath.isNullOrBlank()) {
-                storeFile = file(storeFilePath)
-                storePassword = releaseProp("RELEASE_STORE_PASSWORD")
-                keyAlias = releaseProp("RELEASE_KEY_ALIAS")
-                keyPassword = releaseProp("RELEASE_KEY_PASSWORD")
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = rootProject.file(releaseStoreFilePath!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
             }
         }
     }
@@ -47,9 +58,8 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            val releaseSigning = signingConfigs.getByName("release")
-            if (releaseSigning.storeFile?.exists() == true) {
-                signingConfig = releaseSigning
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
             }
         }
     }

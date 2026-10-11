@@ -11,9 +11,9 @@
 *.apk
 *.aab
 .kotlin/
-*.keystore
 *.jks
+*.keystore
 release.keystore
-.env
 app/google-services.json
 google-services.json
+.env
