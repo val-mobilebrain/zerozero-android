@@ -5,21 +5,23 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
-fun readSigningValue(key: String): String? {
-    System.getenv(key)?.takeIf { it.isNotBlank() }?.let { return it }
-    val localProperties = rootProject.file("local.properties")
-    if (localProperties.exists()) {
-        val props = Properties()
-        localProperties.inputStream().use { props.load(it) }
-        props.getProperty(key)?.takeIf { it.isNotBlank() }?.let { return it }
+fun readSigningValue(vararg keys: String): String? {
+    for (key in keys) {
+        System.getenv(key)?.takeIf { it.isNotBlank() }?.let { return it }
+        val localProperties = rootProject.file("local.properties")
+        if (localProperties.exists()) {
+            val props = Properties()
+            localProperties.inputStream().use { props.load(it) }
+            props.getProperty(key)?.takeIf { it.isNotBlank() }?.let { return it }
+        }
     }
     return null
 }
 
-val releaseStoreFilePath = readSigningValue("RELEASE_STORE_FILE")
-val releaseStorePassword = readSigningValue("RELEASE_STORE_PASSWORD")
-val releaseKeyAlias = readSigningValue("RELEASE_KEY_ALIAS")
-val releaseKeyPassword = readSigningValue("RELEASE_KEY_PASSWORD")
+val releaseStoreFilePath = readSigningValue("RELEASE_STORE_FILE", "KEYSTORE_FILE")
+val releaseStorePassword = readSigningValue("KEYSTORE_PASSWORD", "RELEASE_STORE_PASSWORD")
+val releaseKeyAlias = readSigningValue("KEY_ALIAS", "RELEASE_KEY_ALIAS")
+val releaseKeyPassword = readSigningValue("KEY_PASSWORD", "RELEASE_KEY_PASSWORD")
 
 val hasReleaseSigning =
     !releaseStoreFilePath.isNullOrBlank() &&
@@ -33,8 +35,8 @@ gradle.taskGraph.whenReady {
         allTasks.any { it.path == ":app:assembleRelease" || it.path == ":app:packageRelease" }
     ) {
         error(
-            "Release signing is not configured. Set RELEASE_STORE_FILE, RELEASE_STORE_PASSWORD, " +
-                "RELEASE_KEY_ALIAS, and RELEASE_KEY_PASSWORD (env or local.properties).",
+            "Release signing is not configured. Set KEYSTORE_FILE, KEYSTORE_PASSWORD, " +
+                "KEY_ALIAS, and KEY_PASSWORD (env or local.properties).",
         )
     }
 }

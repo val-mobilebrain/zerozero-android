@@ -47,21 +47,21 @@ Provide credentials via environment variables or `local.properties` (gitignored)
 
 | Property / env var | Description |
 | --- | --- |
-| `RELEASE_STORE_FILE` | Path to the keystore file (relative to project root, e.g. `release.keystore`) |
-| `RELEASE_STORE_PASSWORD` | Keystore password |
-| `RELEASE_KEY_ALIAS` | Key alias |
-| `RELEASE_KEY_PASSWORD` | Key password |
+| `KEYSTORE_FILE` | Path to the keystore file (relative to project root, e.g. `release.keystore`) |
+| `KEYSTORE_PASSWORD` | Keystore password |
+| `KEY_ALIAS` | Key alias |
+| `KEY_PASSWORD` | Key password |
 
 Example `local.properties` entries:
 
 ```properties
-RELEASE_STORE_FILE=release.keystore
-RELEASE_STORE_PASSWORD=your-store-password
-RELEASE_KEY_ALIAS=zerozero
-RELEASE_KEY_PASSWORD=your-key-password
+KEYSTORE_FILE=release.keystore
+KEYSTORE_PASSWORD=123456
+KEY_ALIAS=zerozero
+KEY_PASSWORD=123456
 ```
 
-When all four values are set and the keystore file exists, `assembleRelease` produces a signed APK. Without them, the release APK is built unsigned (suitable for CI smoke builds only).
+When all four values are set and the keystore file exists, `assembleRelease` produces a signed APK.
 
 ## CI (GitHub Actions)
 
@@ -73,10 +73,10 @@ Configure these **repository secrets** (Settings → Secrets and variables → A
 
 | Secret | Description |
 | --- | --- |
-| `RELEASE_KEYSTORE_BASE64` | Base64-encoded release keystore file (`base64 -i release.keystore \| pbcopy` on macOS) |
-| `RELEASE_STORE_PASSWORD` | Keystore password |
-| `RELEASE_KEY_ALIAS` | Key alias |
-| `RELEASE_KEY_PASSWORD` | Key password |
+| `KEYSTORE_BASE64` | Full contents of `release.keystore.base64.txt` (one line) |
+| `KEYSTORE_PASSWORD` | Keystore password |
+| `KEY_ALIAS` | Key alias (`zerozero`) |
+| `KEY_PASSWORD` | Key password (same as keystore for PKCS12) |
 
 The workflow decodes the keystore to `release.keystore` in the repo root and runs `./gradlew assembleRelease`. The signed APK is uploaded as a workflow artifact (`zerozero-release-apk`).
 
