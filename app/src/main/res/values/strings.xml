@@ -3,5 +3,5 @@
     <string name="app_name">ZeroZero</string>
     <string name="zerozero_url">https://www.zerozero.pt/</string>
     <!-- Replace with your OneSignal App ID from Settings → Keys &amp; IDs -->
-    <string name="onesignal_app_id" translatable="false">YOUR_ONESIGNAL_APP_ID</string>
+    <string name="onesignal_app_id" translatable="false">101de570-9a3a-4ed7-b4ba-8adc4ce52bfb</string>
 </resources>

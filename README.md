@@ -15,11 +15,51 @@ Native Android app with WebView for [zerozero.pt](https://www.zerozero.pt/).
 
 ## Build
 
+**Target SDK:** Android 36 (`compileSdk` / `targetSdk`).
+
+Debug:
+
 ```bash
 ./gradlew assembleDebug
 ```
 
 APK: `app/build/outputs/apk/debug/app-debug.apk`
+
+Signed release (local):
+
+```bash
+keytool -genkey -v -keystore release.keystore -alias zerozero -keyalg RSA -keysize 2048 -validity 10000
+```
+
+Add to `local.properties` (not committed):
+
+```properties
+RELEASE_STORE_FILE=release.keystore
+RELEASE_STORE_PASSWORD=your_store_password
+RELEASE_KEY_ALIAS=zerozero
+RELEASE_KEY_PASSWORD=your_key_password
+```
+
+```bash
+./gradlew assembleRelease
+```
+
+APK: `app/build/outputs/apk/release/app-release.apk`
+
+## GitHub Actions
+
+Workflow: `.github/workflows/android-release.yml` — runs on push to `main` and manual dispatch.
+
+Repository secrets:
+
+| Secret | Description |
+|--------|-------------|
+| `RELEASE_KEYSTORE_BASE64` | Base64 of `release.keystore` |
+| `RELEASE_STORE_PASSWORD` | Keystore password |
+| `RELEASE_KEY_ALIAS` | Key alias |
+| `RELEASE_KEY_PASSWORD` | Key password |
+
+Signed APK is uploaded as a workflow artifact.
 
 ## Notes
 
