@@ -36,9 +36,18 @@ jobs:
             echo "KEYSTORE_BASE64 secret is missing"
             exit 1
           fi
-          echo "$KEYSTORE_BASE64" | tr -d '\n\r ' | base64 -d > "${{ github.workspace }}/release.keystore"
-          keytool -list -keystore "${{ github.workspace }}/release.keystore" \
-            -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" >/dev/null
+          KEYSTORE_PATH="${{ github.workspace }}/release.keystore"
+          echo "$KEYSTORE_BASE64" | tr -d '\n\r ' | base64 -d > "$KEYSTORE_PATH"
+          if [ ! -s "$KEYSTORE_PATH" ]; then
+            echo "Decoded keystore is empty. Paste full KEYSTORE_BASE64 (one line from release.keystore.base64.txt)."
+            exit 1
+          fi
+          if ! keytool -list -keystore "$KEYSTORE_PATH" \
+            -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" >/dev/null 2>&1; then
+            echo "Keystore check failed. Use KEY_ALIAS=zerozero and KEYSTORE_PASSWORD=123456 with the current release.keystore base64."
+            keytool -list -keystore "$KEYSTORE_PATH" -storepass "$KEYSTORE_PASSWORD" 2>&1 | sed 's/password/****/g' || true
+            exit 1
+          fi
 
       - name: Build release APK
         env:
