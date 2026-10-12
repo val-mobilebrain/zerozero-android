@@ -9,6 +9,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.ProgressBar
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 
@@ -16,6 +17,12 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
     private lateinit var progressBar: ProgressBar
+    private var pushPromptShown = false
+
+    private val notificationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            PushPermissionHelper.onSystemPermissionResult(this, granted)
+        }
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -76,11 +83,18 @@ class MainActivity : AppCompatActivity() {
                 }
             },
         )
+
+        webView.post { showPushPermissionPromptOnce() }
+    }
+
+    private fun showPushPermissionPromptOnce() {
+        if (pushPromptShown) return
+        pushPromptShown = true
+        PushPermissionHelper.promptIfNeeded(this, notificationPermissionLauncher)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         webView.saveState(outState)
     }
-
 }

@@ -2,6 +2,8 @@
 <resources>
     <string name="app_name">ZeroZero</string>
     <string name="zerozero_url">https://www.zerozero.pt/</string>
-    <!-- Replace with your OneSignal App ID from Settings → Keys &amp; IDs -->
-    <string name="onesignal_app_id" translatable="false">YOUR_ONESIGNAL_APP_ID</string>
+    <string name="push_permission_title">Ativar notificações?</string>
+    <string name="push_permission_message">Receba alertas de futebol e novidades da ZeroZero.</string>
+    <string name="push_permission_allow">Permitir</string>
+    <string name="push_permission_later">Agora não</string>
 </resources>

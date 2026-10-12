@@ -78,7 +78,15 @@ Configure these **repository secrets** (Settings → Secrets and variables → A
 | `KEY_ALIAS` | Key alias (`zerozero`) |
 | `KEY_PASSWORD` | Key password (same as keystore for PKCS12) |
 
-The workflow decodes the keystore to `release.keystore` in the repo root and runs `./gradlew assembleRelease`. The signed APK is uploaded as a workflow artifact (`zerozero-release-apk`).
+The workflow decodes the keystore to `release.keystore` in the repo root and runs `./gradlew bundleRelease` (target/compile SDK **36**). The signed AAB is uploaded as a workflow artifact (`zerozero-release-aab`).
+
+Local signed AAB:
+
+```bash
+./gradlew bundleRelease
+```
+
+Output: `app/build/outputs/bundle/release/app-release.aab`
 
 ## Notes
 

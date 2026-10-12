@@ -5,6 +5,28 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+fun readOnesignalAppId(): String {
+    System.getenv("ONESIGNAL_APP_ID")?.takeIf { it.isNotBlank() }?.let { return it }
+
+    val localProperties = rootProject.file("local.properties")
+    if (localProperties.exists()) {
+        val props = Properties()
+        localProperties.inputStream().use { props.load(it) }
+        props.getProperty("ONESIGNAL_APP_ID")?.takeIf { it.isNotBlank() }?.let { return it }
+    }
+
+    val dotEnv = rootProject.file(".env")
+    if (dotEnv.exists()) {
+        dotEnv.readLines().forEach { line ->
+            if (line.startsWith("ONESIGNAL_APP_ID=")) {
+                return line.substringAfter("=").trim()
+            }
+        }
+    }
+
+    return "YOUR_ONESIGNAL_APP_ID"
+}
+
 fun readSigningValue(vararg keys: String): String? {
     for (key in keys) {
         System.getenv(key)?.takeIf { it.isNotBlank() }?.let { return it }
@@ -32,7 +54,12 @@ val hasReleaseSigning =
 
 gradle.taskGraph.whenReady {
     if (hasReleaseSigning.not() &&
-        allTasks.any { it.path == ":app:assembleRelease" || it.path == ":app:packageRelease" }
+        allTasks.any {
+            it.path == ":app:assembleRelease" ||
+                it.path == ":app:packageRelease" ||
+                it.path == ":app:bundleRelease" ||
+                it.path == ":app:packageReleaseBundle"
+        }
     ) {
         error(
             "Release signing is not configured. Set KEYSTORE_FILE, KEYSTORE_PASSWORD, " +
@@ -49,8 +76,9 @@ android {
         applicationId = "com.zerozerosportnewsappmobzerozero"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.0.1"
+        resValue("string", "onesignal_app_id", readOnesignalAppId())
     }
 
     signingConfigs {

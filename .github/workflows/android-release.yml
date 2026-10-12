@@ -1,4 +1,4 @@
-name: Android Release APK
+name: Android Release
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  assemble-release:
+  release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -42,40 +42,32 @@ jobs:
             echo "Decoded keystore is empty. Paste full KEYSTORE_BASE64 (one line from release.keystore.base64.txt)."
             exit 1
           fi
-          if ! keytool -list -keystore "$KEYSTORE_PATH" \
-            -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" >/dev/null 2>&1; then
-            echo "Keystore check failed. Use KEY_ALIAS=zerozero and KEYSTORE_PASSWORD=123456 with the current release.keystore base64."
-            keytool -list -keystore "$KEYSTORE_PATH" -storepass "$KEYSTORE_PASSWORD" 2>&1 | sed 's/password/****/g' || true
-            exit 1
-          fi
+          keytool -list -keystore "$KEYSTORE_PATH" \
+            -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" >/dev/null
 
-      - name: Build release APK
+      - name: Build signed release AAB (API 36)
         env:
           KEYSTORE_FILE: ${{ github.workspace }}/release.keystore
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./gradlew clean assembleRelease --no-configuration-cache --stacktrace
+          ONESIGNAL_APP_ID: ${{ secrets.ONESIGNAL_APP_ID }}
+        run: ./gradlew clean bundleRelease --no-configuration-cache --stacktrace
 
-      - name: Verify signed APK
+      - name: Verify signed AAB
         run: |
           set -euo pipefail
-          APK="${{ github.workspace }}/app/build/outputs/apk/release/app-release.apk"
-          if [ ! -f "$APK" ]; then
-            echo "Expected signed app-release.apk was not produced (check signing secrets)."
-            ls -la "${{ github.workspace }}/app/build/outputs/apk/release/" || true
+          AAB="${{ github.workspace }}/app/build/outputs/bundle/release/app-release.aab"
+          if [ ! -f "$AAB" ]; then
+            echo "Expected signed app-release.aab was not produced."
+            ls -la "${{ github.workspace }}/app/build/outputs/bundle/release/" || true
             exit 1
           fi
-          if [ -f "${{ github.workspace }}/app/build/outputs/apk/release/app-release-unsigned.apk" ]; then
-            echo "Unsigned APK present — release signing did not apply."
-            exit 1
-          fi
-          APKSIGNER="${ANDROID_HOME}/build-tools/35.0.0/apksigner"
-          "$APKSIGNER" verify --verbose "$APK"
+          jarsigner -verify -verbose -certs "$AAB" | head -20
 
-      - name: Upload release APK
+      - name: Upload release AAB
         uses: actions/upload-artifact@v4
         with:
-          name: zerozero-release-apk
-          path: app/build/outputs/apk/release/app-release.apk
+          name: zerozero-release-aab
+          path: app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
